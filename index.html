@@ -582,6 +582,156 @@
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.2);
     }
+
+    /* ------------------------------------
+       響應式 RWD 媒體查詢 (Mobile & Tablet)
+       ------------------------------------ */
+    .mobile-nav-btn, .mobile-back-btn {
+      display: none;
+    }
+
+    .sidebar-overlay {
+      display: none;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 240px;
+        padding: 1rem;
+      }
+      .list-panel {
+        width: 340px;
+      }
+      .detail-panel {
+        padding: 2rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        height: 100vh;
+        overflow: hidden;
+      }
+      
+      header {
+        padding: 0.75rem 1rem;
+      }
+      
+      h1 {
+        font-size: 1.15rem;
+      }
+
+      .db-stats {
+        display: none;
+      }
+
+      .mobile-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--accent);
+        padding: 0.4rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .main-container {
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* 側邊欄抽屜化 (Drawer) */
+      .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80%;
+        max-width: 300px;
+        height: 100%;
+        z-index: 100;
+        background: #0f172a;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 99;
+      }
+
+      .sidebar-overlay.active {
+        display: block;
+      }
+
+      /* 列表區滿版 */
+      .list-panel {
+        width: 100%;
+        border-right: none;
+      }
+
+      /* 詳細內文區在手機版全螢幕滑入 */
+      .detail-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 50;
+        background: var(--bg-main);
+        padding: 1.25rem 1rem 4rem 1rem;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .detail-panel.active {
+        transform: translateX(0);
+      }
+
+      /* 手機版頂部返回按鈕 */
+      .mobile-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .detail-title {
+        font-size: 1.55rem;
+      }
+
+      .recipe-body {
+        font-size: 0.98rem;
+        line-height: 1.75;
+      }
+
+      .action-bar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -589,6 +739,7 @@
   <!-- 頂部導航 -->
   <header>
     <div class="logo-container">
+      <button class="mobile-nav-btn" onclick="toggleMobileSidebar()">📁 分類</button>
       <div class="logo-icon">🍳</div>
       <div>
         <h1>美味食譜知識庫</h1>
@@ -601,6 +752,7 @@
 
   <!-- 主要框架 -->
   <div class="main-container">
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     
     <!-- 左側欄：Wiki 知識分類樹 -->
     <div class="sidebar">
@@ -796,6 +948,20 @@
       `).join('');
     }
 
+    // 手機版側邊欄抽屜切換
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector(".sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+      sidebar.classList.toggle("active");
+      overlay.classList.toggle("active");
+    }
+
+    // 手機版關閉食譜詳細視圖返回列表
+    function closeMobileDetail() {
+      const detailPanel = document.getElementById("detail-panel");
+      detailPanel.classList.remove("active");
+    }
+
     // 選擇特定標籤進行過濾
     function selectTag(tagName) {
       const clickedTagEl = document.getElementById(`tag-${tagName}`);
@@ -819,6 +985,16 @@
 
         const filtered = recipeDb.filter(recipe => (recipe.tags || []).includes(tagName));
         renderRecipeList(filtered);
+      }
+
+      // 如果在手機版下選擇標籤，自動收起側邊欄抽屜
+      if (window.innerWidth <= 768) {
+        const sidebar = document.querySelector(".sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        if (sidebar.classList.contains("active")) {
+          sidebar.classList.remove("active");
+          overlay.classList.remove("active");
+        }
       }
     }
 
@@ -932,17 +1108,17 @@
       }
 
       detailPanel.innerHTML = `
+        <button class="mobile-back-btn" onclick="closeMobileDetail()">← 返回食譜列表</button>
         <div class="recipe-detail">
           <div class="action-bar">
             <button class="btn" onclick="copyMarkdown(\`${recipeId}\`)">📋 複製食譜內容</button>
-            ${recipe.source ? `<a href="${recipe.source}" target="_blank" class="btn btn-accent" style="text-decoration:none;">🔗 點此觀看原影片/來源</a>` : ''}
+            ${recipe.source ? `<a href="${recipe.source}" target="_blank" class="btn btn-accent" style="text-decoration:none;">🔗 觀看原影片/來源</a>` : ''}
           </div>
           <div class="detail-header">
             <h2 class="detail-title">${recipe.title}</h2>
             <div class="detail-meta">
               <div class="meta-item">👤 作者：<strong>${recipe.author}</strong></div>
               ${recipe.source ? `<div class="meta-item">🎥 來源：<a href="${recipe.source}" target="_blank" class="meta-link">${recipe.author} 的 IG Reels</a></div>` : ''}
-              <div class="meta-item">📂 路徑：<code>${recipeId}</code></div>
             </div>
           </div>
           <div class="recipe-body">
@@ -951,6 +1127,9 @@
         </div>
       `;
       detailPanel.scrollTop = 0;
+
+      // 在手機版上開啟食譜內文面板
+      detailPanel.classList.add("active");
     }
 
     // 複製食譜 Markdown 全文
