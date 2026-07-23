@@ -3,8 +3,16 @@
 .agents/
 scratch/
 
-# Large Media Files (avoid pushing mp4 to git repo)
+# Large Media Files
 ig_mp4/
+
+# Local text logs / raw batch files
+11*.txt
+*.txt
+
+# Local scripts & temp databases (not needed for static web display)
+update_index.py
+database.json
 
 # OS generated files
 Thumbs.db
