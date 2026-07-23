@@ -10,6 +10,9 @@ ig_mp4/
 11*.txt
 *.txt
 
+# Local recipes markdown folder (only database.js is needed for GitHub Pages)
+Recipes/
+
 # Local scripts & temp databases (not needed for static web display)
 update_index.py
 database.json
