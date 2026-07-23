@@ -1,0 +1,11 @@
+# Gemini & Agent Scratch Files
+.gemini/
+.agents/
+scratch/
+
+# Large Media Files (avoid pushing mp4 to git repo)
+ig_mp4/
+
+# OS generated files
+Thumbs.db
+.DS_Store
