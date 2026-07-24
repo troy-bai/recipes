@@ -209,6 +209,57 @@
       border-radius: 4px;
     }
 
+    /* 二級樹狀子分類樣式 */
+    .category-subgroup {
+      margin-bottom: 0.35rem;
+    }
+
+    .category-subgroup-header {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: all 0.2s;
+      margin-bottom: 0.25rem;
+    }
+
+    .category-subgroup-header:hover {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .category-subgroup-header::after {
+      content: '▾';
+      font-size: 0.75rem;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+
+    .category-subgroup.collapsed .category-subgroup-header::after {
+      transform: rotate(-90deg);
+    }
+
+    .category-subgroup-list {
+      list-style: none;
+      padding-left: 0.5rem;
+      margin-left: 0.4rem;
+      border-left: 2px solid rgba(245, 158, 11, 0.2);
+      transition: max-height 0.3s ease-out;
+      overflow: hidden;
+    }
+
+    .category-subgroup.collapsed .category-subgroup-list {
+      max-height: 0 !important;
+    }
+
     /* 中間欄：列表與搜尋 */
     .list-panel {
       width: 420px;
@@ -814,8 +865,16 @@
     // 定義標籤分群規則
     const groupRules = {
       ingredients: ["豬肉料理", "雞肉料理", "牛肉料理", "魚肉料理", "海鮮料理", "蛋料理", "馬鈴薯", "豆腐", "香腸", "米血", "魷魚", "滷蛋"],
-      methods: ["氣炸鍋料理", "電鍋料理", "平底鍋", "烤箱", "滷味", "香煎", "清蒸", "烘蛋"],
+      methods: ["氣炸鍋料理", "電鍋料理", "平底鍋", "烤箱", "滷味", "香煎", "清蒸", "烘蛋", "燒法", "紅燒", "三杯", "醬燒", "照燒", "蔥燒", "乾燒"],
       scenes: ["家常菜", "便當菜", "早餐", "宵夜", "下酒菜", "甜點", "熱炒"]
+    };
+
+    // 二級樹狀子分類定義
+    const subGroupRules = {
+      "燒法": {
+        label: "📂 燒法",
+        tags: ["燒法", "紅燒", "三杯", "醬燒", "照燒", "蔥燒", "乾燒"]
+      }
     };
 
     let recipeDb = [];
@@ -847,10 +906,10 @@
       try {
         if (typeof MiniSearch !== 'undefined') {
           searchIndex = new MiniSearch({
-            fields: ['title', 'tags', 'author', 'content'], // 檢索的欄位
+            fields: ['ingredients', 'title', 'tags', 'author', 'content'], // 檢索的欄位 (含食材)
             storeFields: ['id'], // 檢索成功時回傳的欄位
             searchOptions: {
-              boost: { title: 3, tags: 2, content: 1 }, // 欄位加權比重
+              boost: { ingredients: 10, title: 5, tags: 3, author: 1, content: 0.05 }, // 欄位加權比重：食材 > 標題 > 標籤 > 內文
               prefix: true, // 支援首碼匹配
               fuzzy: 0.2    // 容許少許拼寫錯誤 (模糊檢索)
             }
@@ -891,6 +950,26 @@
       groupEl.classList.toggle("collapsed");
     }
 
+    // 展開/收合二級子分類群組
+    function toggleSubGroup(subGroupId, event) {
+      if (event) event.stopPropagation();
+      const el = document.getElementById(subGroupId);
+      if (!el) return;
+      el.classList.toggle("collapsed");
+      const listEl = el.querySelector(".category-subgroup-list");
+      if (listEl) {
+        if (el.classList.contains("collapsed")) {
+          listEl.style.maxHeight = "0px";
+        } else {
+          listEl.style.maxHeight = listEl.scrollHeight + "px";
+        }
+      }
+      const parentUl = el.closest(".category-list");
+      if (parentUl) {
+        parentUl.style.maxHeight = parentUl.scrollHeight + 300 + "px";
+      }
+    }
+
     // 解析標籤並渲染 Wiki 分類樹
     function renderCategoryTree() {
       const tagCounts = {};
@@ -927,7 +1006,7 @@
 
       // 渲染至 HTML
       renderListHelper("list-ingredients", categories.ingredients);
-      renderListHelper("list-methods", categories.methods);
+      renderMethodsList("list-methods", categories.methods);
       renderListHelper("list-scenes", categories.scenes);
       renderListHelper("list-others", categories.others);
 
@@ -936,6 +1015,61 @@
         const el = document.getElementById(id);
         el.style.maxHeight = el.scrollHeight + "px";
       });
+    }
+
+    function renderMethodsList(ulId, items) {
+      const ul = document.getElementById(ulId);
+      const shaofaSubTags = subGroupRules["燒法"].tags;
+      
+      const shaofaItems = items.filter(item => shaofaSubTags.includes(item.name));
+      const otherItems = items.filter(item => !shaofaSubTags.includes(item.name));
+      
+      const shaofaAllItem = shaofaItems.find(i => i.name === "燒法");
+      const shaofaTotalCount = shaofaAllItem ? shaofaAllItem.count : 52;
+
+      let html = '';
+      if (shaofaItems.length > 0) {
+        html += `
+          <li class="category-subgroup collapsed" id="subgroup-shaofa">
+            <div class="category-subgroup-header" onclick="toggleSubGroup('subgroup-shaofa', event)">
+              <span>📂 燒法</span>
+              <span class="item-count">${shaofaTotalCount}</span>
+            </div>
+            <ul class="category-subgroup-list">
+        `;
+        
+        if (shaofaAllItem) {
+          html += `
+            <li class="category-item" id="tag-燒法" onclick="selectTag('燒法')">
+              <span># 全部燒法</span>
+              <span class="item-count">${shaofaAllItem.count}</span>
+            </li>
+          `;
+        }
+        
+        shaofaItems.filter(i => i.name !== "燒法").forEach(item => {
+          html += `
+            <li class="category-item" id="tag-${item.name}" onclick="selectTag('${item.name}')">
+              <span># ${item.name}</span>
+              <span class="item-count">${item.count}</span>
+            </li>
+          `;
+        });
+
+        html += `
+            </ul>
+          </li>
+        `;
+      }
+
+      html += otherItems.map(item => `
+        <li class="category-item" id="tag-${item.name}" onclick="selectTag('${item.name}')">
+          <span># ${item.name}</span>
+          <span class="item-count">${item.count}</span>
+        </li>
+      `).join('');
+
+      ul.innerHTML = html;
     }
 
     function renderListHelper(ulId, items) {
@@ -1055,15 +1189,27 @@
         }
       }
 
-      // 斷網離線備用搜尋引擎 (簡單好用的多欄位 String.includes 過濾)
+      // 斷網離線備用搜尋引擎 (依照 食材 > 標題 > 標籤 > 內文 權重進行比分排序)
       if (!searchIndex) {
-        searchedRecipes = recipeDb.filter(recipe => {
+        searchedRecipes = recipeDb.map(recipe => {
+          let score = 0;
+          const ingMatch = (recipe.ingredients || "").toLowerCase().includes(query);
           const titleMatch = (recipe.title || "").toLowerCase().includes(query);
-          const authorMatch = (recipe.author || "").toLowerCase().includes(query);
           const tagsMatch = (recipe.tags || []).some(t => t.toLowerCase().includes(query));
+          const authorMatch = (recipe.author || "").toLowerCase().includes(query);
           const contentMatch = (recipe.content || "").toLowerCase().includes(query);
-          return titleMatch || authorMatch || tagsMatch || contentMatch;
-        });
+
+          if (ingMatch) score += 10;
+          if (titleMatch) score += 5;
+          if (tagsMatch) score += 3;
+          if (authorMatch) score += 1;
+          if (contentMatch) score += 0.05;
+
+          return { recipe, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.recipe);
       }
 
       renderRecipeList(searchedRecipes);
