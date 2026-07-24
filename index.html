@@ -810,25 +810,25 @@
       <div class="sidebar-title">📁 知識分類樹</div>
       
       <!-- 食材分類 -->
-      <div class="category-group" id="group-ingredients">
+      <div class="category-group collapsed" id="group-ingredients">
         <div class="category-header" onclick="toggleGroup('group-ingredients')">🥩 食材分類</div>
         <ul class="category-list" id="list-ingredients"></ul>
       </div>
 
       <!-- 烹飪方式 -->
-      <div class="category-group" id="group-methods">
+      <div class="category-group collapsed" id="group-methods">
         <div class="category-header" onclick="toggleGroup('group-methods')">🔥 烹飪方式</div>
         <ul class="category-list" id="list-methods"></ul>
       </div>
 
       <!-- 場景分類 -->
-      <div class="category-group" id="group-scenes">
+      <div class="category-group collapsed" id="group-scenes">
         <div class="category-header" onclick="toggleGroup('group-scenes')">🍱 場景分類</div>
         <ul class="category-list" id="list-scenes"></ul>
       </div>
       
       <!-- 其他分類 -->
-      <div class="category-group" id="group-others">
+      <div class="category-group collapsed" id="group-others">
         <div class="category-header" onclick="toggleGroup('group-others')">🏷️ 其他標籤</div>
         <ul class="category-list" id="list-others"></ul>
       </div>
@@ -947,7 +947,16 @@
     // 展開/收合分類群組
     function toggleGroup(groupId) {
       const groupEl = document.getElementById(groupId);
+      if (!groupEl) return;
       groupEl.classList.toggle("collapsed");
+      const listEl = groupEl.querySelector(".category-list");
+      if (listEl) {
+        if (groupEl.classList.contains("collapsed")) {
+          listEl.style.maxHeight = "0px";
+        } else {
+          listEl.style.maxHeight = listEl.scrollHeight + 500 + "px";
+        }
+      }
     }
 
     // 展開/收合二級子分類群組
@@ -1010,10 +1019,12 @@
       renderListHelper("list-scenes", categories.scenes);
       renderListHelper("list-others", categories.others);
 
-      // 計算以動畫展開的高度
+      // 預設為收合狀態 (maxHeight = 0px)
       ["list-ingredients", "list-methods", "list-scenes", "list-others"].forEach(id => {
         const el = document.getElementById(id);
-        el.style.maxHeight = el.scrollHeight + "px";
+        if (el) {
+          el.style.maxHeight = "0px";
+        }
       });
     }
 
